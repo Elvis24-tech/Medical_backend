@@ -6,15 +6,36 @@ User = get_user_model()
 
 
 class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, validators=[validate_password])
-    role = serializers.CharField(required=False, default="patient")
-    phone = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
+    password = serializers.CharField(
+        write_only=True,
+        validators=[validate_password]
+    )
+
+    role = serializers.CharField(
+        required=False,
+        default="patient"
+    )
+
+    phone = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        allow_null=True
+    )
 
     class Meta:
         model = User
-        fields = ("id", "username", "email", "password", "role", "phone")
+        fields = (
+            "id",
+            "username",
+            "email",
+            "password",
+            "role",
+            "phone",
+        )
 
     def create(self, validated_data):
+
         user = User.objects.create_user(
             username=validated_data["username"],
             email=validated_data["email"],
@@ -23,12 +44,30 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         user.role = validated_data.get("role", "patient")
         user.phone = validated_data.get("phone", "")
+
         user.save()
 
         return user
 
 
+class LoginSerializer(serializers.Serializer):
+
+    email = serializers.EmailField()
+
+    password = serializers.CharField(
+        write_only=True
+    )
+
+
 class UserSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = User
-        fields = ("id", "username", "email", "role", "phone")
+
+        fields = (
+            "id",
+            "username",
+            "email",
+            "role",
+            "phone",
+        )
