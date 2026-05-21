@@ -3,28 +3,15 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 
 User = get_user_model()
-
-
 class RegisterSerializer(serializers.ModelSerializer):
-
     password = serializers.CharField(
         write_only=True,
         validators=[validate_password]
     )
 
-    role = serializers.CharField(
-        required=False,
-        default="patient"
-    )
-
-    phone = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        allow_null=True
-    )
-
     class Meta:
         model = User
+
         fields = (
             "id",
             "username",
@@ -35,6 +22,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
 
     def create(self, validated_data):
+        from patients.models import Patient
+        from doctors.models import Doctor
 
         user = User.objects.create_user(
             username=validated_data["username"],
@@ -42,10 +31,29 @@ class RegisterSerializer(serializers.ModelSerializer):
             password=validated_data["password"],
         )
 
-        user.role = validated_data.get("role", "patient")
-        user.phone = validated_data.get("phone", "")
+        user.role = validated_data.get(
+            "role",
+            "patient"
+        )
+
+        user.phone = validated_data.get(
+            "phone",
+            ""
+        )
 
         user.save()
+
+        if user.role == "patient":
+
+            Patient.objects.create(
+                user=user
+            )
+
+        elif user.role == "doctor":
+
+            Doctor.objects.create(
+                user=user
+            )
 
         return user
 
@@ -62,6 +70,7 @@ class LoginSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
+
         model = User
 
         fields = (
