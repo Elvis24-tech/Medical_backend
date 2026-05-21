@@ -1,9 +1,7 @@
 from rest_framework import serializers
 from datetime import date
 from .models import Appointment
-from doctors.models import (
-    DoctorSchedule
-)
+from doctors.models import DoctorSchedule
 class AppointmentSerializer(
     serializers.ModelSerializer
 ):
@@ -13,16 +11,11 @@ class AppointmentSerializer(
         fields = "__all__"
         read_only_fields = (
             "patient",
+            "status",
         )
 
-   
-    def validate(
-        self,
-        attrs
-    ):
-
+    def validate(self, attrs):
         doctor = attrs["doctor"]
-
         appt_date = attrs[
             "appointment_date"
         ]
@@ -32,19 +25,16 @@ class AppointmentSerializer(
         ]
 
         if appt_date < date.today():
-
             raise serializers.ValidationError(
                 "Past dates not allowed."
             )
 
         if not doctor.available:
-
             raise serializers.ValidationError(
                 "Doctor unavailable."
             )
 
         try:
-
             schedule = (
                 DoctorSchedule.objects
                 .get(
@@ -52,10 +42,9 @@ class AppointmentSerializer(
                 )
             )
 
-        except:
-
+        except DoctorSchedule.DoesNotExist:
             raise serializers.ValidationError(
-                "Doctor schedule missing."
+                "Doctor has no schedule."
             )
 
         if not (
@@ -64,10 +53,11 @@ class AppointmentSerializer(
             appt_time
             <=
             schedule.end_time
+
         ):
 
             raise serializers.ValidationError(
-                "Outside schedule."
+                "Outside doctor schedule."
             )
 
         exists = (
@@ -77,11 +67,15 @@ class AppointmentSerializer(
                 appointment_date=appt_date,
                 appointment_time=appt_time
             )
+
+            .exclude(
+                status="cancelled"
+            )
+
             .exists()
         )
 
         if exists:
-
             raise serializers.ValidationError(
                 "Slot already booked."
             )
