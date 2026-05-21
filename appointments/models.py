@@ -2,6 +2,7 @@ from django.db import models
 from patients.models import Patient
 from doctors.models import Doctor
 class Appointment(models.Model):
+
     STATUS_CHOICES = (
         ("pending", "Pending"),
         ("approved", "Approved"),
@@ -11,12 +12,16 @@ class Appointment(models.Model):
 
     patient = models.ForeignKey(
         Patient,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name="appointments"
     )
+
     doctor = models.ForeignKey(
         Doctor,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name="appointments"
     )
+
     appointment_date = models.DateField()
     appointment_time = models.TimeField()
     reason = models.TextField()
@@ -25,6 +30,17 @@ class Appointment(models.Model):
         choices=STATUS_CHOICES,
         default="pending"
     )
-    created_at = models.DateTimeField(auto_now_add=True)
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+
     def __str__(self):
-        return f"{self.patient} - {self.doctor}"
+        return (
+            f"{self.patient.user.username}"
+            f" → "
+            f"{self.doctor.user.username}"
+        )

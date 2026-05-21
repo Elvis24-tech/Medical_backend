@@ -1,6 +1,4 @@
 from rest_framework.permissions import BasePermission
-
-
 class IsAdmin(BasePermission):
 
     def has_permission(
@@ -14,9 +12,7 @@ class IsAdmin(BasePermission):
             and request.user.role == "admin"
         )
 
-
 class IsDoctor(BasePermission):
-
     def has_permission(
         self,
         request,
@@ -27,10 +23,7 @@ class IsDoctor(BasePermission):
             request.user.is_authenticated
             and request.user.role == "doctor"
         )
-
-
 class IsPatient(BasePermission):
-
     def has_permission(
         self,
         request,
