@@ -1,7 +1,26 @@
-from rest_framework.routers import DefaultRouter
-from .views import DoctorViewSet
+from rest_framework.routers import (
+    DefaultRouter
+)
 
-router = DefaultRouter()
-router.register("", DoctorViewSet)
+from .views import (
+    DoctorViewSet,
+    DoctorScheduleViewSet
+)
 
-urlpatterns = router.urls
+router = (
+    DefaultRouter()
+)
+
+router.register(
+    "",
+    DoctorViewSet
+)
+
+router.register(
+    "schedule",
+    DoctorScheduleViewSet
+)
+
+urlpatterns = (
+    router.urls
+)

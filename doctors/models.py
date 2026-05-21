@@ -26,3 +26,21 @@ class Doctor(models.Model):
     )
     def __str__(self):
         return self.user.username
+
+
+class DoctorSchedule(models.Model):
+    doctor = models.OneToOneField(
+        Doctor,
+        on_delete=models.CASCADE
+    )
+
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    active = models.BooleanField(
+        default=True
+    )
+
+    def __str__(self):
+        return (
+            f"{self.doctor.user.username}"
+        )

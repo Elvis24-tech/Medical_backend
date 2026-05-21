@@ -1,10 +1,37 @@
 from rest_framework import viewsets
-from .models import Doctor
-from .serializers import DoctorSerializer
-from users.permissions import IsAdmin
+from rest_framework.permissions import (
+IsAuthenticated
+)
+from .models import (
+    Doctor,
+    DoctorSchedule
+)
 
-class DoctorViewSet(viewsets.ModelViewSet):
-
-    queryset = Doctor.objects.all()
-    serializer_class = DoctorSerializer
-    permission_classes = [IsAdmin]
+from .serializers import (
+    DoctorSerializer,
+    DoctorScheduleSerializer
+)
+class DoctorViewSet(
+    viewsets.ModelViewSet
+):
+    queryset = (
+        Doctor.objects.all()
+    )
+    serializer_class = (
+        DoctorSerializer
+    )
+    permission_classes = (
+        IsAuthenticated,
+    )
+class DoctorScheduleViewSet(
+    viewsets.ModelViewSet
+):
+    queryset = (
+        DoctorSchedule.objects.all()
+    )
+    serializer_class = (
+        DoctorScheduleSerializer
+    )
+    permission_classes = (
+        IsAuthenticated,
+    )

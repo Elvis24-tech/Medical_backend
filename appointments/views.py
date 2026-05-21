@@ -6,37 +6,29 @@ from patients.models import Patient
 class AppointmentViewSet(
     viewsets.ModelViewSet
 ):
-
     serializer_class = (
         AppointmentSerializer
     )
-
     permission_classes = (
         IsAuthenticated,
     )
-
     queryset = (
         Appointment.objects
         .all()
     )
-
     def perform_create(
         self,
         serializer
     ):
-
         patient = Patient.objects.get(
             user=self.request.user
         )
-
         serializer.save(
             patient=patient
         )
-
     def get_queryset(
         self
     ):
-
         user = self.request.user
         if user.role == "admin":
             return Appointment.objects.all()
