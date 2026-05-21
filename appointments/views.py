@@ -1,63 +1,46 @@
-from rest_framework import (
-    viewsets,
-    status
-)
-from rest_framework.decorators import (
-    action
-)
-from rest_framework.response import (
-    Response
-)
-from rest_framework.permissions import (
-    IsAuthenticated
-)
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from .models import Appointment
-from .serializers import (
-    AppointmentSerializer
-)
+from .serializers import AppointmentSerializer
 from patients.models import Patient
-class AppointmentViewSet(
-    viewsets.ModelViewSet
-):
-
-    serializer_class = (
-        AppointmentSerializer
-    )
-
-    permission_classes = (
-        IsAuthenticated,
-    )
-
-    queryset = (
-        Appointment.objects.all()
-    )
-
+from billing.models import Bill
+class AppointmentViewSet(viewsets.ModelViewSet):
+    queryset = Appointment.objects.all()
+    serializer_class = AppointmentSerializer
+    permission_classes = [IsAuthenticated]
     def get_queryset(self):
         user = self.request.user
         if user.role == "admin":
             return Appointment.objects.all()
-
-        if user.role == "doctor":
+        elif user.role == "doctor":
             return Appointment.objects.filter(
                 doctor__user=user
             )
 
-        if user.role == "patient":
+        elif user.role == "patient":
             return Appointment.objects.filter(
                 patient__user=user
             )
 
         return Appointment.objects.none()
+
     def perform_create(
         self,
         serializer
     ):
 
-        patient = (
-            Patient.objects.get(
+        try:
+
+            patient = Patient.objects.get(
                 user=self.request.user
             )
-        )
+
+        except Patient.DoesNotExist:
+            raise Exception(
+                "Patient profile missing."
+            )
 
         serializer.save(
             patient=patient,
@@ -74,35 +57,58 @@ class AppointmentViewSet(
         pk=None
     ):
 
-        appointment = (
-            self.get_object()
-        )
-
-        if (
-            request.user.role
-            !=
-            "doctor"
-        ):
-
+        appointment = self.get_object()
+        if request.user.role != "doctor":
             return Response(
                 {
                     "error":
-                    "Only doctors can approve"
+                    "Only doctors can approve appointments"
                 },
-                status=403
+                status=status.HTTP_403_FORBIDDEN
+            )
+        if appointment.doctor.user != request.user:
+            return Response(
+                {
+                    "error":
+                    "You cannot approve another doctor's appointment"
+                },
+                status=status.HTTP_403_FORBIDDEN
             )
 
-        appointment.status = (
-            "approved"
-        )
-
+        if appointment.status == "approved":
+            return Response(
+                {
+                    "message":
+                    "Already approved"
+                }
+            )
+        appointment.status = "approved"
         appointment.save()
-        return Response(
-            {
-                "message":
-                "Appointment approved"
+        bill, created = Bill.objects.get_or_create(
+            appointment=appointment,
+            defaults={
+                "patient":
+                appointment.patient,
+                "amount":
+                appointment.doctor.consultation_fee,
+                "description":
+                (
+                    f"Consultation with "
+                    f"{appointment.doctor.user.username}"
+                )
             }
         )
+        return Response({
+
+            "message":
+            "Appointment approved",
+            "bill_created":
+            created,
+
+            "bill_id":
+            bill.id
+
+        })
 
     @action(
         detail=True,
@@ -113,19 +119,48 @@ class AppointmentViewSet(
         request,
         pk=None
     ):
-
-        appointment = (
-            self.get_object()
-        )
-
-        appointment.status = (
-            "cancelled"
-        )
-
+        appointment = self.get_object()
+        if appointment.status == "completed":
+            return Response(
+                {
+                    "error":
+                    "Completed appointments cannot be cancelled"
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        appointment.status = "cancelled"
         appointment.save()
-        return Response(
-            {
-                "message":
-                "Appointment cancelled"
-            }
-        )
+        return Response({
+
+            "message":
+            "Appointment cancelled"
+
+        })
+
+    @action(
+        detail=True,
+        methods=["post"]
+    )
+    def complete(
+        self,
+        request,
+        pk=None
+    ):
+
+        appointment = self.get_object()
+        if request.user.role != "doctor":
+            return Response(
+                {
+                    "error":
+                    "Only doctors can complete appointments"
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        appointment.status = "completed"
+        appointment.save()
+        return Response({
+            "message":
+            "Appointment completed"
+
+        })
