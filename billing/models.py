@@ -10,7 +10,9 @@ class Bill(models.Model):
     appointment = models.OneToOneField(
         Appointment,
         on_delete=models.CASCADE,
-        related_name="bill"
+        related_name="bill",
+        null=True,
+        blank=True
     )
     amount = models.DecimalField(
         max_digits=10,
@@ -24,6 +26,4 @@ class Bill(models.Model):
         auto_now_add=True
     )
     def __str__(self):
-        return (
-            f"Bill #{self.id}"
-        )
+        return f"Bill #{self.id}"
