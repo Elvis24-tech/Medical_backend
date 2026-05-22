@@ -6,11 +6,14 @@ class Payment(models.Model):
         ("completed", "Completed"),
         ("failed", "Failed"),
     )
-    bill = models.ForeignKey(
+    bill = models.OneToOneField(
         Bill,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name="payment"
     )
-    phone_number = models.CharField(max_length=15)
+    phone_number = models.CharField(
+        max_length=15
+    )
     amount = models.DecimalField(
         max_digits=10,
         decimal_places=2
@@ -25,6 +28,12 @@ class Payment(models.Model):
         choices=STATUS_CHOICES,
         default="pending"
     )
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
     def __str__(self):
-        return self.transaction_id or "Pending"
+        return (
+            self.transaction_id
+            or
+            f"Payment {self.id}"
+        )

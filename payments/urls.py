@@ -1,7 +1,21 @@
-from rest_framework.routers import DefaultRouter
-from .views import PaymentViewSet
+from rest_framework.routers import (
+    DefaultRouter
+)
 
-router = DefaultRouter()
-router.register("", PaymentViewSet)
+from .views import (
+    PaymentViewSet
+)
 
-urlpatterns = router.urls
+router = (
+    DefaultRouter()
+)
+
+router.register(
+    "",
+    PaymentViewSet,
+    basename="payments"
+)
+
+urlpatterns = (
+    router.urls
+)
