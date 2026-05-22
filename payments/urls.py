@@ -1,21 +1,26 @@
+from django.urls import (
+    path
+)
 from rest_framework.routers import (
     DefaultRouter
 )
-
 from .views import (
-    PaymentViewSet
+    PaymentViewSet,
+    mpesa_callback
 )
-
 router = (
     DefaultRouter()
 )
-
 router.register(
     "",
-    PaymentViewSet,
-    basename="payments"
+    PaymentViewSet
 )
-
-urlpatterns = (
+urlpatterns = [
+    path(
+        "callback/",
+        mpesa_callback
+    ),
+]
+urlpatterns += (
     router.urls
 )

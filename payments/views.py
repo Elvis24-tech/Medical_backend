@@ -1,19 +1,24 @@
 from uuid import uuid4
 from rest_framework import (
-    viewsets,
-    status
+    viewsets
 )
 from rest_framework.decorators import (
-    action
-)
-from rest_framework.permissions import (
-    IsAuthenticated
+    action,
+    api_view
 )
 from rest_framework.response import (
     Response
 )
+from rest_framework.permissions import (
+    IsAuthenticated
+)
 from .models import Payment
-from .serializers import PaymentSerializer
+from .serializers import (
+    PaymentSerializer
+)
+from .services.mpesa import (
+    stk_push
+)
 class PaymentViewSet(
     viewsets.ModelViewSet
 ):
@@ -26,50 +31,64 @@ class PaymentViewSet(
     permission_classes = (
         IsAuthenticated,
     )
-    def get_queryset(
-        self
-    ):
-        user = self.request.user
-        if user.role == "admin":
-            return Payment.objects.all()
-        return Payment.objects.filter(
-            bill__patient__user=user
-        )
-
     @action(
         detail=True,
         methods=["post"]
     )
-    def pay(
+    def stk(
         self,
         request,
         pk=None
     ):
-
-        payment = self.get_object()
-        if payment.bill.paid:
-            return Response(
-                {
-                    "message":
-                    "Bill already paid"
-                }
+        payment = (
+            self.get_object()
+        )
+        result = (
+            stk_push(
+                payment.phone_number,
+                payment.amount
             )
-        payment.transaction_id = (
-            str(uuid4())[:12]
         )
-        payment.status = (
-            "completed"
-        )
-        payment.save()
-        bill = payment.bill
-        bill.paid = True
-        bill.save()
         return Response(
-            {
-                "message":
-                "Payment successful",
-                "transaction_id":
-                payment.transaction_id
-            },
-            status=status.HTTP_200_OK
+            result
         )
+
+
+@api_view(
+    ["POST"]
+)
+def mpesa_callback(
+    request
+):
+    callback = (
+        request.data
+    )
+    try:
+        checkout = (
+            callback
+            ["Body"]
+            ["stkCallback"]
+        )
+        if (
+            checkout
+            ["ResultCode"]
+            == 0
+        ):
+            Payment.objects.filter(
+                status="pending"
+            ).update(
+                status=
+                "completed",
+
+            )
+
+    except:
+
+        pass
+
+    return Response(
+        {
+            "success":
+            True
+        }
+    )
